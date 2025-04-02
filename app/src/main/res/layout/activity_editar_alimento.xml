@@ -27,7 +27,17 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:minHeight="48dp" />
-
+    <Spinner
+        android:id="@+id/spnCategoria"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:minHeight="48dp" />
+    <TextView
+        android:id="@+id/txtFechaCaducidad"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Fecha de caducidad"
+        android:enabled="false" />
     <Button
         android:id="@+id/btnGuardar"
         android:layout_width="match_parent"

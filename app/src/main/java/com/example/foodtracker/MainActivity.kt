@@ -2,6 +2,7 @@ package com.example.foodtracker
 
 import android.app.DatePickerDialog
 import android.content.Context
+import android.content.Intent
 import android.os.Bundle
 import android.view.View
 import android.widget.*
@@ -48,6 +49,7 @@ class MainActivity : AppCompatActivity() {
         cargarAlimentos()
         // Referencias a los elementos de la interfaz
         val campoNombre = findViewById<EditText>(R.id.campoNombre)
+        val botonRegresar = findViewById<Button>(R.id.botonRegresar)
         val botonAgregar = findViewById<Button>(R.id.botonAgregar)
         val listaVistaAlimentos = findViewById<ListView>(R.id.listaVistaAlimentos)
         val botonSeleccionarFecha = findViewById<Button>(R.id.botonSeleccionarFecha)
@@ -104,7 +106,12 @@ class MainActivity : AppCompatActivity() {
         // Adaptador para mostrar los alimentos en la lista
         val adaptador = ArrayAdapter(this, android.R.layout.simple_list_item_1, listaAlimentos.map { it.nombre })
         listaVistaAlimentos.adapter = adaptador
-
+        //Botón para regresar al inicio
+        botonRegresar.setOnClickListener {
+            val intent = Intent(this, HomeActivity::class.java)
+            startActivity(intent)
+            finish()
+        }
         // Botón para agregar alimentos
         botonAgregar.setOnClickListener {
             val nombreAlimento = campoNombre.text.toString()
@@ -119,7 +126,7 @@ class MainActivity : AppCompatActivity() {
                 adaptador.addAll(listaAlimentos.map { "${it.nombre} - ${it.cantidad} ${it.unidad}" })
                 adaptador.notifyDataSetChanged()
 
-                guardarAlimentos()  // Guardamos la lista actualizada
+                guardarAlimentos()
 
                 campoNombre.text.clear()
                 campoCantidad.text.clear()
@@ -128,6 +135,11 @@ class MainActivity : AppCompatActivity() {
             } else {
                 Toast.makeText(this, "Complete todos los campos", Toast.LENGTH_SHORT).show()
             }
+            guardarAlimentos()
+            Toast.makeText(this, "Alimento agregado", Toast.LENGTH_SHORT).show()
+            val intent = Intent(this, HomeActivity::class.java)
+            startActivity(intent)
+            finish()
         }
     }
 }

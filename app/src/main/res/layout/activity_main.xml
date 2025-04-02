@@ -54,7 +54,11 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Agregar Alimento" />
-
+    <Button
+        android:id="@+id/botonRegresar"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Regresar" />
     <ListView
         android:id="@+id/listaVistaAlimentos"
         android:layout_width="match_parent"

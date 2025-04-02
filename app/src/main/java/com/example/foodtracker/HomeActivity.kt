@@ -5,7 +5,9 @@ import android.content.Intent
 import android.content.SharedPreferences
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.widget.Button
 import android.widget.ListView
+import android.widget.Toast
 import com.example.foodtracker.modelos.Alimento
 import com.example.foodtracker.modelos.AlimentosAdapter
 import com.google.gson.Gson
@@ -28,16 +30,22 @@ class HomeActivity : AppCompatActivity() {
         cargarAlimentos()
 
         // Configurar adaptador
+        alimentosList = cargarAlimentos() // Carga los datos iniciales
         alimentosAdapter = AlimentosAdapter(this, alimentosList)
         listView.adapter = alimentosAdapter
         listView.setOnItemClickListener { _, _, position, _ ->
             val intent = Intent(this, EditarAlimentoActivity::class.java).apply {
-                putExtra("alimento", Gson().toJson(alimentosList[position]))
-                putExtra("position", position) // Envía la posición para actualizar
+                putExtra("alimento", alimentosList[position]) // Envía el objeto serializable directamente
+                putExtra("position", position)
             }
             startActivityForResult(intent, 1)
         }
-
+        val btnAgregarAlimento = findViewById<Button>(R.id.btnAgregarAlimento)
+        btnAgregarAlimento.setOnClickListener {
+            val intent = Intent(this, MainActivity::class.java)
+            startActivity(intent)
+            finish()
+        }
     }
     override fun onResume() {
         super.onResume()
@@ -49,18 +57,29 @@ class HomeActivity : AppCompatActivity() {
         if (resultCode == Activity.RESULT_OK && data != null) {
             val alimentoEditado = data.getSerializableExtra("alimentoEditado") as Alimento
             val position = data.getIntExtra("position", -1)
+
             if (position != -1) {
+                // 1. Actualiza la lista en memoria
                 alimentosList[position] = alimentoEditado
-                guardarAlimentos()  // ¡Ahora sí existe este método!
+
+                // 2. Notifica al adaptador del cambio
                 alimentosAdapter.notifyDataSetChanged()
+
+                // 3. Guarda la lista actualizada en SharedPreferences
+                guardarAlimentos()
+
+                // Opcional: Muestra un mensaje de confirmación
+                Toast.makeText(this, "Alimento actualizado", Toast.LENGTH_SHORT).show()
             }
         }
     }
-    private fun cargarAlimentos() {
-        val gson = Gson()
-        val json = sharedPreferences.getString("listaAlimentos", null) // Cambiado a "listaAlimentos"
-        val type = object : TypeToken<MutableList<Alimento>>() {}.type
-        alimentosList = gson.fromJson(json, type) ?: mutableListOf()
+    private fun cargarAlimentos(): MutableList<Alimento> {
+        val json = sharedPreferences.getString("listaAlimentos", null)
+        return if (json != null) {
+            Gson().fromJson(json, object : TypeToken<MutableList<Alimento>>() {}.type)
+        } else {
+            mutableListOf()
+        }
     }
     private fun guardarAlimentos() {
         val sharedPreferences = getSharedPreferences("FoodTrackerPrefs", MODE_PRIVATE)
