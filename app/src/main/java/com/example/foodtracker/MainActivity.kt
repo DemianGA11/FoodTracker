@@ -27,10 +27,9 @@ class MainActivity : AppCompatActivity() {
         val editor = sharedPreferences.edit()
 
         val gson = Gson()
-        val json = gson.toJson(listaAlimentos)  // Convertimos la lista a JSON
-
-        editor.putString("listaAlimentos", json)  // Guardamos el JSON
-        editor.apply()  // Guardamos los cambios
+        val json = gson.toJson(listaAlimentos)
+        editor.putString("listaAlimentos", json)
+        editor.apply()
     }
     private fun cargarAlimentos() {
         val sharedPreferences = getSharedPreferences("FoodTrackerPrefs", Context.MODE_PRIVATE)
@@ -40,7 +39,7 @@ class MainActivity : AppCompatActivity() {
         if (json != null) {
             val type = object : TypeToken<MutableList<Alimento>>() {}.type
             listaAlimentos.clear()
-            listaAlimentos.addAll(gson.fromJson(json, type))  // Convertimos el JSON de vuelta a una lista
+            listaAlimentos.addAll(gson.fromJson(json, type))
         }
     }
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -55,17 +54,12 @@ class MainActivity : AppCompatActivity() {
         val botonSeleccionarFecha = findViewById<Button>(R.id.botonSeleccionarFecha)
         val textoFecha = findViewById<TextView>(R.id.textoFecha)
         val spinnerCategoria = findViewById<Spinner>(R.id.spinnerCategoria)
-
         campoCantidad = findViewById(R.id.campoCantidad)
         spinnerUnidad = findViewById(R.id.spinnerUnidad)
-
-        // Configurar opciones del Spinner
         val unidades = arrayOf("Paquete", "Gramos", "Mililitros", "Litros", "Piezas")
         val adaptadorUnidades = ArrayAdapter(this, android.R.layout.simple_spinner_item, unidades)
         adaptadorUnidades.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         spinnerUnidad.adapter = adaptadorUnidades
-
-        // Capturar selección del Spinner
         spinnerUnidad.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
             override fun onItemSelected(parent: AdapterView<*>, view: View?, position: Int, id: Long) {
                 unidadSeleccionada = parent.getItemAtPosition(position).toString()
