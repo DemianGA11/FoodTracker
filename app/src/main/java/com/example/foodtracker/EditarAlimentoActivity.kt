@@ -18,7 +18,9 @@ class EditarAlimentoActivity : AppCompatActivity() {
     private lateinit var edtCantidad: EditText
     private lateinit var spnUnidad: Spinner
     private lateinit var btnGuardar: Button
-
+    private lateinit var btnSumar: Button
+    private lateinit var btnRestar: Button
+    private lateinit var btnEliminar: Button
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_editar_alimento)
@@ -27,6 +29,10 @@ class EditarAlimentoActivity : AppCompatActivity() {
         edtCantidad = findViewById(R.id.edtCantidad)
         spnUnidad = findViewById(R.id.spnUnidad)
         btnGuardar = findViewById(R.id.btnGuardar)
+
+        btnSumar = findViewById(R.id.btnSumar)
+        btnRestar = findViewById(R.id.btnRestar)
+        btnEliminar = findViewById(R.id.btnEliminar)
 
         // Recibe el alimento directamente como Serializable
         val alimento = intent.getSerializableExtra("alimento") as? Alimento
@@ -67,6 +73,29 @@ class EditarAlimentoActivity : AppCompatActivity() {
         }
         btnGuardar.setOnClickListener {
             guardarCambios(alimento) // Pasamos el alimento original para mantener datos no editados (como fecha)
+        }
+        btnSumar.setOnClickListener {
+            val cantidadActual = edtCantidad.text.toString().toDoubleOrNull() ?: 0.0
+            edtCantidad.setText((cantidadActual + 1).toString())
+        }
+
+        // Listener para restar (no permitir valores negativos)
+        btnRestar.setOnClickListener {
+            val cantidadActual = edtCantidad.text.toString().toDoubleOrNull() ?: 0.0
+            if (cantidadActual > 0) {
+                edtCantidad.setText((cantidadActual - 1).toString())
+            } else {
+                Toast.makeText(this, "La cantidad no puede ser menor a 0", Toast.LENGTH_SHORT).show()
+            }
+        }
+
+        // Listener para eliminar
+        btnEliminar.setOnClickListener {
+            val resultIntent = Intent().apply {
+                putExtra("posicionEliminar", intent.getIntExtra("position", -1))
+            }
+            setResult(Activity.RESULT_OK, resultIntent)
+            finish()
         }
     }
 

@@ -54,23 +54,42 @@ class HomeActivity : AppCompatActivity() {
     }
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
+
+        // Caso 1: Resultado exitoso y datos no nulos
         if (resultCode == Activity.RESULT_OK && data != null) {
-            val alimentoEditado = data.getSerializableExtra("alimentoEditado") as Alimento
-            val position = data.getIntExtra("position", -1)
 
-            if (position != -1) {
-                // 1. Actualiza la lista en memoria
-                alimentosList[position] = alimentoEditado
+                // --- Caso A: Alimento editado ---
+                if (data.hasExtra("alimentoEditado") && data.hasExtra("position")) {
+                    val alimentoEditado = data.getSerializableExtra("alimentoEditado") as? Alimento
+                    val position = data.getIntExtra("position", -1)
 
-                // 2. Notifica al adaptador del cambio
-                alimentosAdapter.notifyDataSetChanged()
+                    if (position != -1 && alimentoEditado != null && position < alimentosList.size) {
+                        alimentosList[position] = alimentoEditado
+                        alimentosAdapter.notifyDataSetChanged()
+                        guardarAlimentos()
+                        Toast.makeText(this, "Alimento actualizado", Toast.LENGTH_SHORT).show()
+                    } else {
+                        Toast.makeText(this, "Error: Posición o datos inválidos", Toast.LENGTH_SHORT).show()
+                    }
+                }
+                // --- Caso B: Alimento eliminado ---
+                else if (data.hasExtra("posicionEliminar")) {
+                    val position = data.getIntExtra("posicionEliminar", -1)
 
-                // 3. Guarda la lista actualizada en SharedPreferences
-                guardarAlimentos()
+                    if (position != -1 && position < alimentosList.size) {
+                        alimentosList.removeAt(position)
+                        alimentosAdapter.notifyDataSetChanged()
+                        guardarAlimentos()
+                        Toast.makeText(this, "Alimento eliminado", Toast.LENGTH_SHORT).show()
+                    } else {
+                        Toast.makeText(this, "Error: No se pudo eliminar", Toast.LENGTH_SHORT).show()
+                    }
+                }
 
-                // Opcional: Muestra un mensaje de confirmación
-                Toast.makeText(this, "Alimento actualizado", Toast.LENGTH_SHORT).show()
-            }
+        }
+        // Caso 2: Resultado cancelado por el usuario
+        else if (resultCode == Activity.RESULT_CANCELED) {
+            Toast.makeText(this, "Edición cancelada", Toast.LENGTH_SHORT).show()
         }
     }
     private fun cargarAlimentos(): MutableList<Alimento> {

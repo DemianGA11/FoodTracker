@@ -13,6 +13,18 @@
         android:inputType="text"
         android:minHeight="48dp" />
 
+    <Spinner
+        android:id="@+id/spnCategoria"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:minHeight="48dp" />
+
+    <Spinner
+        android:id="@+id/spnUnidad"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:minHeight="48dp" />
+
     <EditText
         android:id="@+id/edtCantidad"
         android:layout_width="match_parent"
@@ -20,24 +32,38 @@
         android:hint="Cantidad"
         android:inputType="number"
         android:minHeight="48dp" />
-
-
-    <Spinner
-        android:id="@+id/spnUnidad"
-        android:layout_width="match_parent"
+    <Button
+        android:id="@+id/btnRestar"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:minHeight="48dp" />
-    <Spinner
-        android:id="@+id/spnCategoria"
-        android:layout_width="match_parent"
+        android:text="-"
+        android:layout_marginStart="8dp"/>
+
+    <!-- Botón de sumar -->
+
+    <!-- Botón de eliminar -->
+
+    <Button
+        android:id="@+id/btnSumar"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:minHeight="48dp" />
+        android:layout_marginStart="4dp"
+        android:text="+" />
+
+    <Button
+        android:id="@+id/btnEliminar"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:text="Eliminar" />
+
     <TextView
         android:id="@+id/txtFechaCaducidad"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="Fecha de caducidad"
-        android:enabled="false" />
+        android:enabled="false"
+        android:hint="Fecha de caducidad" />
+
     <Button
         android:id="@+id/btnGuardar"
         android:layout_width="match_parent"
