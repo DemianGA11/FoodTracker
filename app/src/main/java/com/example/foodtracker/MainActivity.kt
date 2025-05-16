@@ -90,7 +90,10 @@ class MainActivity : AppCompatActivity() {
             val dia = calendario.get(Calendar.DAY_OF_MONTH)
 
             val datePicker = DatePickerDialog(this, { _, year, month, dayOfMonth ->
-                fechaCaducidadSeleccionada = "$year-${month + 1}-$dayOfMonth"
+                // Asegura 2 dígitos en mes y día: "05" en vez de "5"
+                val mesFormateado = String.format("%02d", month + 1)
+                val diaFormateado = String.format("%02d", dayOfMonth)
+                fechaCaducidadSeleccionada = "$year-$mesFormateado-$diaFormateado" // Ej: "2025-05-13"
                 textoFecha.text = "Fecha: $fechaCaducidadSeleccionada"
             }, anio, mes, dia)
 
@@ -135,6 +138,8 @@ class MainActivity : AppCompatActivity() {
             startActivity(intent)
             finish()
         }
+
     }
+
 }
 

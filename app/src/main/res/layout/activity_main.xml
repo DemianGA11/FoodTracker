@@ -1,67 +1,131 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:padding="16dp">
+    android:paddingTop="30dp">
 
     <TextView
         android:id="@+id/textView"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_width="wrap_content"
+        android:layout_height="48dp"
+        android:fontFamily="sans-serif-black"
+        android:lineSpacingExtra="10sp"
         android:text="Agregar alimento"
-        android:textAlignment="textStart"
-        android:textStyle="bold" />
+        android:textAlignment="center"
+        android:textAllCaps="false"
+        android:textSize="34sp"
+        android:textStyle="bold"
+        android:translationX="80dp"
+        android:typeface="monospace" />
 
     <EditText
         android:id="@+id/campoNombre"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:hint="Nombre del alimento" />
+        android:layout_width="358dp"
+        android:layout_height="69dp"
+        android:hint="Nombre del alimento"
+        android:textAppearance="@style/TextAppearance.AppCompat.Body2"
+        android:textSize="14sp"
+        android:translationX="30dp"
+        android:typeface="sans" />
 
     <Button
         android:id="@+id/botonSeleccionarFecha"
-        android:layout_width="288dp"
-        android:layout_height="wrap_content"
-        android:text="Seleccionar Fecha de Caducidad" />
+        android:layout_width="360dp"
+        android:layout_height="66dp"
+        android:text="Seleccionar Fecha de Caducidad"
+        android:textStyle="bold"
+        android:translationX="30dp" />
 
     <TextView
         android:id="@+id/textoFecha"
+        style="@style/Widget.AppCompat.TextView.SpinnerItem"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_height="34dp"
         android:text="Fecha no seleccionada"
-        android:textSize="16sp"/>
+        android:textAlignment="center"
+        android:textSize="16sp"
+        android:translationX="120dp"
+        android:visibility="visible"
+        tools:visibility="visible" />
 
-    <Spinner
-        android:id="@+id/spinnerCategoria"
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"/>
+        android:layout_height="47dp"
+        android:orientation="horizontal">
 
-    <EditText
-        android:id="@+id/campoCantidad"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:hint="Cantidad"
-        android:inputType="numberDecimal" />
+        <TextView
+            android:id="@+id/textView5"
+            android:layout_width="229dp"
+            android:layout_height="47dp"
+            android:layout_weight="1"
+            android:text="Categoría:"
+            android:textAlignment="center"
+            android:textAllCaps="true"
+            android:textSize="24sp"
+            android:textStyle="bold" />
 
-    <Spinner
-        android:id="@+id/spinnerUnidad"
+        <Spinner
+            android:id="@+id/spinnerCategoria"
+            android:layout_width="194dp"
+            android:layout_height="46dp" />
+    </LinearLayout>
+
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content" />
+        android:layout_height="86dp"
+        android:orientation="vertical">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="43dp"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/textView7"
+                android:layout_width="224dp"
+                android:layout_height="47dp"
+                android:layout_weight="1"
+                android:text="Cantidad:"
+                android:textAlignment="center"
+                android:textAllCaps="true"
+                android:textSize="24sp"
+                android:textStyle="bold" />
+
+            <EditText
+                android:id="@+id/campoCantidad"
+                android:layout_width="194dp"
+                android:layout_height="wrap_content"
+                android:hint="Cantidad"
+                android:inputType="numberDecimal" />
+
+        </LinearLayout>
+
+        <Spinner
+            android:id="@+id/spinnerUnidad"
+            android:layout_width="191dp"
+            android:layout_height="wrap_content"
+            android:translationX="218dp" />
+    </LinearLayout>
 
     <Button
         android:id="@+id/botonAgregar"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Agregar Alimento" />
+        android:text="Agregar Alimento"
+        android:translationX="120dp" />
+
     <Button
         android:id="@+id/botonRegresar"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Regresar" />
+        android:text="Regresar"
+        android:translationX="150dp" />
+
     <ListView
         android:id="@+id/listaVistaAlimentos"
         android:layout_width="match_parent"
-        android:layout_height="330dp" />
+        android:layout_height="260dp" />
 
 </LinearLayout>

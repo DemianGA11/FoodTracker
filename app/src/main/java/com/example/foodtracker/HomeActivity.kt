@@ -1,17 +1,28 @@
 package com.example.foodtracker
 
+import DailyCheckWorker
+import NotificationHelper
 import android.app.Activity
 import android.content.Intent
 import android.content.SharedPreferences
+import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.widget.Button
 import android.widget.ListView
 import android.widget.Toast
+import androidx.annotation.OptIn
+import androidx.media3.common.util.Log
+import androidx.media3.common.util.UnstableApi
+import androidx.work.ExistingPeriodicWorkPolicy
+import androidx.work.OneTimeWorkRequestBuilder
 import com.example.foodtracker.modelos.Alimento
 import com.example.foodtracker.modelos.AlimentosAdapter
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
+import androidx.work.PeriodicWorkRequestBuilder
+import androidx.work.WorkManager
+import java.util.concurrent.TimeUnit
 
 class HomeActivity : AppCompatActivity() {
     private lateinit var listView: ListView
@@ -22,7 +33,9 @@ class HomeActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_home)
-
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            requestPermissions(arrayOf(android.Manifest.permission.POST_NOTIFICATIONS), 100)
+        }
         listView = findViewById(R.id.listViewAlimentos)
         sharedPreferences = getSharedPreferences("FoodTrackerPrefs", MODE_PRIVATE)
 
@@ -45,6 +58,15 @@ class HomeActivity : AppCompatActivity() {
             val intent = Intent(this, MainActivity::class.java)
             startActivity(intent)
             finish()
+        }
+        scheduleDailyCheck()
+        findViewById<Button>(R.id.btnTest).setOnClickListener {
+            val testRequest = OneTimeWorkRequestBuilder<DailyCheckWorker>().build()
+            WorkManager.getInstance(this).enqueue(testRequest)
+            Toast.makeText(this, "Worker ejecutado", Toast.LENGTH_SHORT).show()
+        }
+        findViewById<Button>(R.id.btnVerEstadisticas).setOnClickListener {
+            startActivity(Intent(this, EstadisticasActivity::class.java))
         }
     }
     override fun onResume() {
@@ -107,5 +129,29 @@ class HomeActivity : AppCompatActivity() {
         val json = gson.toJson(alimentosList)  // Convierte la lista a JSON
         editor.putString("listaAlimentos", json)  // Usa la misma clave que en MainActivity
         editor.apply()  // Guarda los cambios
+    }
+
+    @OptIn(UnstableApi::class)
+    private fun scheduleDailyCheck() {
+        val workManager = WorkManager.getInstance(this)
+
+        // Verifica si ya existe una tarea programada con el mismo nombre
+        workManager.getWorkInfosForUniqueWorkLiveData("dailyFoodCheck").observe(this) { workInfos ->
+            if (workInfos.isNullOrEmpty()) { // Si no hay tarea existente, la crea
+                val dailyCheckRequest = PeriodicWorkRequestBuilder<DailyCheckWorker>(
+                    24, // Cada 24 horas
+                    TimeUnit.HOURS
+                ).setInitialDelay(1, TimeUnit.MINUTES) // Espera 1 minuto antes de la primera ejecución (para pruebas)
+                    .build()
+
+                workManager.enqueueUniquePeriodicWork(
+                    "dailyFoodCheck",
+                    ExistingPeriodicWorkPolicy.KEEP, // Evita duplicados
+                    dailyCheckRequest
+                )
+
+                Log.d("WorkManager", "Tarea programada para revisión diaria")
+            }
+        }
     }
 }

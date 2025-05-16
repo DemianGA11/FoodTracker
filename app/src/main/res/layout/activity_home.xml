@@ -45,6 +45,18 @@
         android:layout_weight="1"
         android:divider="@android:color/darker_gray"
         android:dividerHeight="1dp" />
+    <Button
+        android:id="@+id/btnVerEstadisticas"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Ver Estadísticas"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="16dp"/>
+    <Button
+        android:id="@+id/btnTest"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Notificaciones" />
 
     <!-- Botón para agregar alimento -->
     <Button
