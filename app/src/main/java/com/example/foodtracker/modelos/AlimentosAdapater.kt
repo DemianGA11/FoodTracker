@@ -8,7 +8,7 @@ import android.view.ViewGroup
 import android.widget.TextView
 import android.widget.BaseAdapter
 
-class AlimentosAdapter(private val context: Context, private val alimentos: List<Alimento>) : BaseAdapter() {
+class AlimentosAdapter(private val context: Context, private val alimentos: MutableList<Alimento>) : BaseAdapter() {
 
     override fun getCount(): Int {
         return alimentos.size
@@ -22,6 +22,7 @@ class AlimentosAdapter(private val context: Context, private val alimentos: List
         return position.toLong()
     }
 
+
     override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
         val view: View = convertView ?: LayoutInflater.from(context).inflate(android.R.layout.simple_list_item_2, parent, false)
         val alimento = alimentos[position]
@@ -33,5 +34,10 @@ class AlimentosAdapter(private val context: Context, private val alimentos: List
         txtDetalles.text = "${alimento.cantidad} ${alimento.unidad} - Vence: ${alimento.fechaCaducidad}"
 
         return view
+    }
+    fun updateList(newList: List<Alimento>) {
+        alimentos.clear()  // Ahora funciona porque 'alimentos' es MutableList
+        alimentos.addAll(newList)
+        notifyDataSetChanged()
     }
 }

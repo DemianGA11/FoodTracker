@@ -7,14 +7,18 @@ import android.os.Bundle
 import android.view.View
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
 import com.example.foodtracker.modelos.Alimento
 import java.util.*
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
+import kotlinx.coroutines.launch
+import com.example.foodtracker.modelos.AlimentoDao
+import com.example.foodtracker.modelos.AppDatabase
 
 
 class MainActivity : AppCompatActivity() {
-
+    private lateinit var alimentoDao: AlimentoDao // Añade esta línea
     private val listaAlimentos = mutableListOf<Alimento>()  // Lista de alimentos
     private lateinit var categoriaSeleccionada: String
     private var fechaCaducidadSeleccionada: String = ""
@@ -45,6 +49,10 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+
+        val db = AppDatabase.getDatabase(this)
+        alimentoDao = db.alimentoDao()
+
         cargarAlimentos()
         // Referencias a los elementos de la interfaz
         val campoNombre = findViewById<EditText>(R.id.campoNombre)
@@ -111,35 +119,35 @@ class MainActivity : AppCompatActivity() {
         }
         // Botón para agregar alimentos
         botonAgregar.setOnClickListener {
-            val nombreAlimento = campoNombre.text.toString()
-            val cantidadTexto = campoCantidad.text.toString()
+            lifecycleScope.launch {
+                val nombreAlimento = campoNombre.text.toString() // Obtén el valor del EditText
+                val cantidadTexto = campoCantidad.text.toString()
 
-            if (nombreAlimento.isNotEmpty() && fechaCaducidadSeleccionada.isNotEmpty() && cantidadTexto.isNotEmpty()) {
-                val cantidad = cantidadTexto.toDoubleOrNull() ?: 0.0  // Convertir a número
-                val nuevoAlimento = Alimento(nombreAlimento, fechaCaducidadSeleccionada, categoriaSeleccionada, cantidad, unidadSeleccionada)
-                listaAlimentos.add(nuevoAlimento)
+                // Validación de campos
+                if (nombreAlimento.isNotEmpty() && cantidadTexto.isNotEmpty() && fechaCaducidadSeleccionada.isNotEmpty()) {
+                    val cantidad = cantidadTexto.toDouble()
 
-                adaptador.clear()
-                adaptador.addAll(listaAlimentos.map { "${it.nombre} - ${it.cantidad} ${it.unidad}" })
-                adaptador.notifyDataSetChanged()
+                    val nuevoAlimento = Alimento(
+                        nombre = nombreAlimento,
+                        fechaCaducidad = fechaCaducidadSeleccionada,
+                        categoria = categoriaSeleccionada,
+                        cantidad = cantidad,
+                        unidad = unidadSeleccionada
+                    )
 
-                guardarAlimentos()
-
-                campoNombre.text.clear()
-                campoCantidad.text.clear()
-                textoFecha.text = "Fecha no seleccionada"
-                fechaCaducidadSeleccionada = ""
-            } else {
-                Toast.makeText(this, "Complete todos los campos", Toast.LENGTH_SHORT).show()
+                    guardarAlimento(nuevoAlimento)
+                    Toast.makeText(this@MainActivity, "Alimento agregado", Toast.LENGTH_SHORT).show()
+                    finish()
+                } else {
+                    Toast.makeText(this@MainActivity, "Complete todos los campos", Toast.LENGTH_SHORT).show()
+                }
             }
-            guardarAlimentos()
-            Toast.makeText(this, "Alimento agregado", Toast.LENGTH_SHORT).show()
-            val intent = Intent(this, HomeActivity::class.java)
-            startActivity(intent)
-            finish()
         }
 
     }
 
+    private suspend fun guardarAlimento(alimento: Alimento) {
+        alimentoDao.insert(alimento) // Ahora alimentoDao está disponible
+    }
 }
 

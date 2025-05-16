@@ -5,14 +5,12 @@
     android:orientation="vertical"
     android:padding="16dp">
 
-    <!-- Sección de perfil -->
+    <!-- Encabezado -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:padding="8dp">
-
-
 
         <LinearLayout
             android:layout_width="wrap_content"
@@ -24,7 +22,7 @@
                 android:id="@+id/txtNombreUsuario"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Nombre Usuario"
+                android:text="Bienvenido"
                 android:textSize="18sp"
                 android:textStyle="bold" />
 
@@ -32,7 +30,7 @@
                 android:id="@+id/txtCorreoUsuario"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="correo@ejemplo.com"
+                android:text="Tu despensa"
                 android:textSize="14sp" />
         </LinearLayout>
     </LinearLayout>
@@ -45,24 +43,26 @@
         android:layout_weight="1"
         android:divider="@android:color/darker_gray"
         android:dividerHeight="1dp" />
+
+    <!-- Botones de acción -->
     <Button
         android:id="@+id/btnVerEstadisticas"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Ver Estadísticas"
-        android:layout_gravity="center_horizontal"
-        android:layout_marginTop="16dp"/>
+        android:layout_marginTop="8dp"
+        android:text="Ver Estadísticas" />
+
     <Button
         android:id="@+id/btnTest"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Notificaciones" />
+        android:layout_marginTop="8dp"
+        android:text="Probar Notificaciones" />
 
-    <!-- Botón para agregar alimento -->
     <Button
         android:id="@+id/btnAgregarAlimento"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
         android:text="Agregar Alimento" />
-
 </LinearLayout>

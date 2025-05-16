@@ -1,157 +1,134 @@
 package com.example.foodtracker
 
 import DailyCheckWorker
-import NotificationHelper
 import android.app.Activity
 import android.content.Intent
-import android.content.SharedPreferences
 import android.os.Build
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.widget.Button
 import android.widget.ListView
 import android.widget.Toast
 import androidx.annotation.OptIn
+import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
 import androidx.media3.common.util.Log
 import androidx.media3.common.util.UnstableApi
+import androidx.work.Constraints
 import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.OneTimeWorkRequestBuilder
-import com.example.foodtracker.modelos.Alimento
-import com.example.foodtracker.modelos.AlimentosAdapter
-import com.google.gson.Gson
-import com.google.gson.reflect.TypeToken
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
+import com.example.foodtracker.modelos.Alimento
+import com.example.foodtracker.modelos.AlimentosAdapter
+import com.example.foodtracker.modelos.AlimentoDao
+import com.example.foodtracker.modelos.AppDatabase
+import kotlinx.coroutines.launch
 import java.util.concurrent.TimeUnit
 
 class HomeActivity : AppCompatActivity() {
+    companion object {
+        const val EDITAR_ALIMENTO_REQUEST = 1
+    }
     private lateinit var listView: ListView
+    private lateinit var alimentoDao: AlimentoDao
     private lateinit var alimentosAdapter: AlimentosAdapter
-    private lateinit var alimentosList: MutableList<Alimento>
-    private lateinit var sharedPreferences: SharedPreferences
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_home)
+        val sharedPreferences = getSharedPreferences("FoodTrackerPrefs", MODE_PRIVATE)
+        sharedPreferences.edit().remove("listaAlimentos").apply()
+        // Inicializar vistas
+        listView = findViewById(R.id.listViewAlimentos)
+        val btnAgregarAlimento = findViewById<Button>(R.id.btnAgregarAlimento)
+        val btnTest = findViewById<Button>(R.id.btnTest)
+        val btnVerEstadisticas = findViewById<Button>(R.id.btnVerEstadisticas)
+
+        // Inicializar Room
+        val db = AppDatabase.getDatabase(this)
+        alimentoDao = db.alimentoDao()
+
+        // Configurar adaptador
+        alimentosAdapter = AlimentosAdapter(this, mutableListOf())
+        listView.adapter = alimentosAdapter
+
+        // Observar cambios en la base de datos
+        observarAlimentos()
+
+        // Solicitar permisos de notificación (si es necesario)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             requestPermissions(arrayOf(android.Manifest.permission.POST_NOTIFICATIONS), 100)
         }
-        listView = findViewById(R.id.listViewAlimentos)
-        sharedPreferences = getSharedPreferences("FoodTrackerPrefs", MODE_PRIVATE)
 
-        // Cargar alimentos desde SharedPreferences
-        cargarAlimentos()
-
-        // Configurar adaptador
-        alimentosList = cargarAlimentos() // Carga los datos iniciales
-        alimentosAdapter = AlimentosAdapter(this, alimentosList)
-        listView.adapter = alimentosAdapter
-        listView.setOnItemClickListener { _, _, position, _ ->
-            val intent = Intent(this, EditarAlimentoActivity::class.java).apply {
-                putExtra("alimento", alimentosList[position]) // Envía el objeto serializable directamente
-                putExtra("position", position)
-            }
-            startActivityForResult(intent, 1)
-        }
-        val btnAgregarAlimento = findViewById<Button>(R.id.btnAgregarAlimento)
+        // Configurar listeners
         btnAgregarAlimento.setOnClickListener {
-            val intent = Intent(this, MainActivity::class.java)
-            startActivity(intent)
-            finish()
+            startActivity(Intent(this, MainActivity::class.java))
         }
-        scheduleDailyCheck()
+
         findViewById<Button>(R.id.btnTest).setOnClickListener {
-            val testRequest = OneTimeWorkRequestBuilder<DailyCheckWorker>().build()
+            val testRequest = OneTimeWorkRequestBuilder<DailyCheckWorker>()
+                .setInitialDelay(1, TimeUnit.SECONDS) // Para pruebas inmediatas
+                .build()
+
             WorkManager.getInstance(this).enqueue(testRequest)
-            Toast.makeText(this, "Worker ejecutado", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "Verificando alimentos...", Toast.LENGTH_SHORT).show()
         }
-        findViewById<Button>(R.id.btnVerEstadisticas).setOnClickListener {
+
+        btnVerEstadisticas.setOnClickListener {
             startActivity(Intent(this, EstadisticasActivity::class.java))
         }
+
+        // Programar chequeo diario
+        scheduleDailyCheck()
     }
-    override fun onResume() {
-        super.onResume()
-        cargarAlimentos()
-        alimentosAdapter.notifyDataSetChanged()
+
+    private fun observarAlimentos() {
+        lifecycleScope.launch {
+            alimentoDao.getAllAlimentos().collect { alimentos ->
+                alimentosAdapter.updateList(alimentos)
+
+                // Configurar clics en los items
+                listView.setOnItemClickListener { _, _, position, _ ->
+                    val alimento = alimentos[position]
+                    val intent = Intent(this@HomeActivity, EditarAlimentoActivity::class.java).apply {
+                        putExtra("alimento_id", alimento.id) // Envía solo el ID
+                    }
+                    startActivityForResult(intent, EDITAR_ALIMENTO_REQUEST)
+                }
+            }
+        }
     }
+
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
 
-        // Caso 1: Resultado exitoso y datos no nulos
         if (resultCode == Activity.RESULT_OK && data != null) {
-
-                // --- Caso A: Alimento editado ---
-                if (data.hasExtra("alimentoEditado") && data.hasExtra("position")) {
-                    val alimentoEditado = data.getSerializableExtra("alimentoEditado") as? Alimento
-                    val position = data.getIntExtra("position", -1)
-
-                    if (position != -1 && alimentoEditado != null && position < alimentosList.size) {
-                        alimentosList[position] = alimentoEditado
-                        alimentosAdapter.notifyDataSetChanged()
-                        guardarAlimentos()
-                        Toast.makeText(this, "Alimento actualizado", Toast.LENGTH_SHORT).show()
-                    } else {
-                        Toast.makeText(this, "Error: Posición o datos inválidos", Toast.LENGTH_SHORT).show()
-                    }
-                }
-                // --- Caso B: Alimento eliminado ---
-                else if (data.hasExtra("posicionEliminar")) {
-                    val position = data.getIntExtra("posicionEliminar", -1)
-
-                    if (position != -1 && position < alimentosList.size) {
-                        alimentosList.removeAt(position)
-                        alimentosAdapter.notifyDataSetChanged()
-                        guardarAlimentos()
-                        Toast.makeText(this, "Alimento eliminado", Toast.LENGTH_SHORT).show()
-                    } else {
-                        Toast.makeText(this, "Error: No se pudo eliminar", Toast.LENGTH_SHORT).show()
-                    }
-                }
-
+            // Manejar resultados de edición/eliminación si es necesario
         }
-        // Caso 2: Resultado cancelado por el usuario
-        else if (resultCode == Activity.RESULT_CANCELED) {
-            Toast.makeText(this, "Edición cancelada", Toast.LENGTH_SHORT).show()
-        }
-    }
-    private fun cargarAlimentos(): MutableList<Alimento> {
-        val json = sharedPreferences.getString("listaAlimentos", null)
-        return if (json != null) {
-            Gson().fromJson(json, object : TypeToken<MutableList<Alimento>>() {}.type)
-        } else {
-            mutableListOf()
-        }
-    }
-    private fun guardarAlimentos() {
-        val sharedPreferences = getSharedPreferences("FoodTrackerPrefs", MODE_PRIVATE)
-        val editor = sharedPreferences.edit()
-        val gson = Gson()
-        val json = gson.toJson(alimentosList)  // Convierte la lista a JSON
-        editor.putString("listaAlimentos", json)  // Usa la misma clave que en MainActivity
-        editor.apply()  // Guarda los cambios
     }
 
     @OptIn(UnstableApi::class)
     private fun scheduleDailyCheck() {
         val workManager = WorkManager.getInstance(this)
 
-        // Verifica si ya existe una tarea programada con el mismo nombre
-        workManager.getWorkInfosForUniqueWorkLiveData("dailyFoodCheck").observe(this) { workInfos ->
-            if (workInfos.isNullOrEmpty()) { // Si no hay tarea existente, la crea
-                val dailyCheckRequest = PeriodicWorkRequestBuilder<DailyCheckWorker>(
-                    24, // Cada 24 horas
-                    TimeUnit.HOURS
-                ).setInitialDelay(1, TimeUnit.MINUTES) // Espera 1 minuto antes de la primera ejecución (para pruebas)
-                    .build()
+        // Configuración mejorada del trabajo periódico
+        val constraints = Constraints.Builder()
+            .setRequiresBatteryNotLow(true)
+            .build()
 
-                workManager.enqueueUniquePeriodicWork(
-                    "dailyFoodCheck",
-                    ExistingPeriodicWorkPolicy.KEEP, // Evita duplicados
-                    dailyCheckRequest
-                )
+        val dailyCheckRequest = PeriodicWorkRequestBuilder<DailyCheckWorker>(
+            24, // Cada 24 horas
+            TimeUnit.HOURS
+        )
+            .setConstraints(constraints)
+            .setInitialDelay(1, TimeUnit.MINUTES)
+            .build()
 
-                Log.d("WorkManager", "Tarea programada para revisión diaria")
-            }
-        }
+        // Política para evitar duplicados
+        workManager.enqueueUniquePeriodicWork(
+            "daily_food_check",
+            ExistingPeriodicWorkPolicy.UPDATE, // Actualiza si ya existe
+            dailyCheckRequest
+        )
     }
 }
