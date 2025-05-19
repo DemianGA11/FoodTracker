@@ -6,6 +6,7 @@
     android:orientation="vertical"
     android:background="#FFFFFF">
 
+    <!-- Encabezado -->
     <TextView
         android:id="@+id/header"
         android:layout_width="match_parent"
@@ -19,21 +20,17 @@
         android:padding="16dp"
         android:paddingTop="32dp" />
 
-    <ScrollView
+    <!-- ListView sin ScrollView -->
+    <ListView
+        android:id="@+id/listViewNovedades"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="1">
+        android:layout_weight="1"
+        android:divider="@android:color/darker_gray"
+        android:dividerHeight="1dp"
+        android:padding="8dp" />
 
-        <ListView
-            android:id="@+id/listViewNovedades"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:divider="@android:color/darker_gray"
-            android:dividerHeight="1dp"
-            android:padding="8dp" />
-
-    </ScrollView>
-
+    <!-- Navegación inferior -->
     <LinearLayout
         android:id="@+id/navigation_menu"
         android:layout_width="match_parent"

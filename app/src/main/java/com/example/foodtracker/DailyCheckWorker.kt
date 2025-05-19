@@ -21,12 +21,12 @@ class DailyCheckWorker(context: Context, params: WorkerParameters) : CoroutineWo
     override suspend fun doWork(): Result {
         return try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                checkExpiringFoods()
+                checkExpiringFoods() // Ejecuta el chequeo solo en Android 8+
             }
             Result.success()
         } catch (e: Exception) {
             Log.e("DailyCheckWorker", "Error en doWork", e)
-            Result.retry()
+            Result.retry() // Si falla, WorkManager lo intenta de nuevo
         }
     }
 
@@ -34,20 +34,20 @@ class DailyCheckWorker(context: Context, params: WorkerParameters) : CoroutineWo
     private suspend fun checkExpiringFoods() {
         val db = AppDatabase.getDatabase(applicationContext)
         val hoy = LocalDate.now()
-        val limite = hoy.plusDays(7)
+        val limite = hoy.plusDays(7) // Límite de 7 días para alerta
 
         val alimentosProximos = db.alimentoDao().getAllForStats().filter {
             try {
                 val fecha = LocalDate.parse(it.fechaCaducidad, dateFormatter)
                 val diasRestantes = ChronoUnit.DAYS.between(hoy, fecha)
-                diasRestantes in 0..7 && !it.notificado // ← evita duplicados
+                diasRestantes in 0..7 && !it.notificado // evita duplicados
             } catch (e: Exception) {
-                false
+                false // Ignora si hay error en fecha
             }
         }
 
         alimentosProximos.forEach { alimento ->
-            notifyFood(alimento)
+            notifyFood(alimento) // Envía la notificación
             db.alimentoDao().update(alimento.copy(notificado = true)) // ← actualiza como notificado
         }
     }

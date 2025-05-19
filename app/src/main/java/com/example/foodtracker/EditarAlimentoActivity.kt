@@ -31,6 +31,7 @@ class EditarAlimentoActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_editar_alimento)
 
+        // Enlaza cada elemento visual con su ID en el layout
         campoNombre = findViewById(R.id.campoNombre)
         campoCantidad = findViewById(R.id.campoCantidad)
         spinnerUnidad = findViewById(R.id.spinnerUnidad)
@@ -41,9 +42,11 @@ class EditarAlimentoActivity : AppCompatActivity() {
         btnAumentar = findViewById(R.id.btnAumentar)
         btnDisminuir = findViewById(R.id.btnDisminuir)
 
+        // Cambia colores de botones
         btnGuardar.setBackgroundColor(ContextCompat.getColor(this, android.R.color.holo_green_dark))
         btnEliminar.setBackgroundColor(ContextCompat.getColor(this, android.R.color.holo_red_dark))
 
+        // Llena los spinners con opciones predefinidas
         val categorias = listOf("Lácteos", "Carnes", "Frutas", "Verduras", "Otros")
         val unidades = listOf("Paquete", "Gramos", "Mililitros", "Litros", "Piezas")
 
@@ -57,6 +60,7 @@ class EditarAlimentoActivity : AppCompatActivity() {
             return
         }
 
+        // Carga el alimento desde la base de datos
         lifecycleScope.launch {
             val dao = AppDatabase.getDatabase(this@EditarAlimentoActivity).alimentoDao()
             alimento = dao.getAlimentoById(alimentoId)

@@ -155,18 +155,10 @@ class MainActivity : AppCompatActivity() {
             startActivity(intent)
         }
 
-        // Botón Notificaciones (lanza revisión manual)
-        /*val navNotificaciones = findViewById<ImageView>(R.id.navNotificaciones)
-        navNotificaciones.setOnClickListener {
-            val request = OneTimeWorkRequestBuilder<DailyCheckWorker>().build()
-            WorkManager.getInstance(this).enqueue(request)
-            Toast.makeText(this, "Verificando alimentos próximos a caducar...", Toast.LENGTH_SHORT).show()
-        }*/
         findViewById<ImageView>(R.id.navNotificaciones).setOnClickListener {
             startActivity(Intent(this, NovedadesActivity::class.java))
         }
 
-        // navAgregar no hace nada porque ya estás en esta pantalla
     }
 
     private suspend fun guardarAlimento(alimento: Alimento) {

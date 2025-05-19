@@ -1,6 +1,5 @@
 package com.example.foodtracker.modelos
 
-// AppDatabase.kt
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase

@@ -55,17 +55,8 @@ class EstadisticasActivity : AppCompatActivity() {
         }
 
         navEstadisticas.setOnClickListener {
-            //Toast.makeText(this, "Ya estás en Estadísticas", Toast.LENGTH_SHORT).show()
         }
 
-        /*navNotificaciones.setOnClickListener {
-            val testRequest = OneTimeWorkRequestBuilder<DailyCheckWorker>()
-                .setInitialDelay(1, TimeUnit.SECONDS)
-                .build()
-
-            WorkManager.getInstance(this).enqueue(testRequest)
-            Toast.makeText(this, "Verificando alimentos...", Toast.LENGTH_SHORT).show()
-        }*/
         findViewById<ImageView>(R.id.navNotificaciones).setOnClickListener {
             startActivity(Intent(this, NovedadesActivity::class.java))
         }
