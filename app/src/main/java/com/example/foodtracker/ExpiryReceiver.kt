@@ -1,6 +1,6 @@
 package com.example.foodtracker
 
-import NotificationHelper
+import com.example.foodtracker.NotificationHelper
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent

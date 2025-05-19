@@ -1,72 +1,122 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:padding="16dp">
+    android:padding="16dp"
+    android:background="#FFFFFF">
 
-    <EditText
-        android:id="@+id/edtNombre"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="Nombre del alimento"
-        android:inputType="text"
-        android:minHeight="48dp" />
+        android:orientation="vertical">
 
-    <Spinner
-        android:id="@+id/spnCategoria"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:minHeight="48dp" />
+        <!-- Encabezado -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="#FFD155"
+            android:text="\n\nEditar Alimento"
+            android:textSize="22sp"
+            android:textStyle="bold"
+            android:textColor="#000000"
+            android:gravity="center"
+            android:padding="16dp"
+            android:paddingTop="32dp"
+            android:layout_marginBottom="24dp" />
 
-    <Spinner
-        android:id="@+id/spnUnidad"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:minHeight="48dp" />
+        <!-- Nombre -->
+        <EditText
+            android:id="@+id/campoNombre"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:hint="Nombre del alimento"
+            android:background="@android:drawable/editbox_background"
+            android:textColor="#000000"
+            android:inputType="textPersonName"
+            android:layout_marginBottom="16dp" />
 
-    <EditText
-        android:id="@+id/edtCantidad"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:hint="Cantidad"
-        android:inputType="number"
-        android:minHeight="48dp" />
-    <Button
-        android:id="@+id/btnRestar"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="-"
-        android:layout_marginStart="8dp"/>
+        <!-- Cantidad con botones + y - -->
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="16dp">
 
-    <!-- Botón de sumar -->
+            <Button
+                android:id="@+id/btnDisminuir"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:text="−"
+                android:textColor="#FFFFFF"
+                android:backgroundTint="#154f75" />
 
-    <!-- Botón de eliminar -->
+            <EditText
+                android:id="@+id/campoCantidad"
+                android:layout_width="80dp"
+                android:layout_height="48dp"
+                android:inputType="numberDecimal"
+                android:background="@android:drawable/editbox_background"
+                android:gravity="center"
+                android:hint="Cantidad"
+                android:textColor="#000000"
+                android:layout_marginHorizontal="8dp" />
 
-    <Button
-        android:id="@+id/btnSumar"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="4dp"
-        android:text="+" />
+            <Button
+                android:id="@+id/btnAumentar"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:text="+"
+                android:textColor="#FFFFFF"
+                android:backgroundTint="#154f75" />
+        </LinearLayout>
 
-    <Button
-        android:id="@+id/btnEliminar"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="8dp"
-        android:text="Eliminar" />
+        <!-- Unidad -->
+        <Spinner
+            android:id="@+id/spinnerUnidad"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:background="@android:drawable/editbox_background"
+            android:layout_marginBottom="16dp" />
 
-    <TextView
-        android:id="@+id/txtFechaCaducidad"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:enabled="false"
-        android:hint="Fecha de caducidad" />
+        <!-- Categoría -->
+        <Spinner
+            android:id="@+id/spinnerCategoria"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:background="@android:drawable/editbox_background"
+            android:layout_marginBottom="16dp" />
 
-    <Button
-        android:id="@+id/btnGuardar"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Guardar Cambios" />
-</LinearLayout>
+        <!-- Fecha -->
+        <EditText
+            android:id="@+id/campoFecha"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:hint="Fecha de caducidad"
+            android:background="@android:drawable/editbox_background"
+            android:textColor="#000000"
+            android:focusable="false"
+            android:clickable="true"
+            android:inputType="none"
+            android:layout_marginBottom="24dp" />
+
+        <!-- Botón Guardar -->
+        <Button
+            android:id="@+id/btnGuardar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Guardar cambios"
+            android:backgroundTint="#154f75"
+            android:textColor="#FFFFFF"
+            android:layout_marginBottom="12dp" />
+
+        <!-- Botón Eliminar -->
+        <Button
+            android:id="@+id/btnEliminar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Eliminar alimento"
+            android:backgroundTint="#154f75"
+            android:textColor="#FFFFFF" />
+    </LinearLayout>
+</ScrollView>

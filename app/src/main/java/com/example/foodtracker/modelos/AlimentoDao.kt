@@ -26,7 +26,7 @@ interface AlimentoDao {
     @Query("SELECT * FROM alimentos ORDER BY fechaCaducidad ASC")
     fun getAllAlimentos(): Flow<List<Alimento>> // Flujo reactivo para la UI
 
-    @Query("SELECT * FROM alimentos WHERE fechaCaducidad BETWEEN :hoy AND :limite AND notificado = 0")
+    @Query("SELECT * FROM alimentos WHERE fechaCaducidad BETWEEN :hoy AND :limite")
     suspend fun getAlimentosProximosACaducar(hoy: String, limite: String): List<Alimento>
 
 

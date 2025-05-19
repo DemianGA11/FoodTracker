@@ -6,9 +6,11 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import android.content.Context
 
-@Database(entities = [Alimento::class], version = 1)
+@Database(entities = [Alimento::class, Notificacion::class], version = 2)
+
 abstract class AppDatabase : RoomDatabase() {
     abstract fun alimentoDao(): AlimentoDao
+    abstract fun notificacionDao(): NotificacionDao
 
     companion object {
         @Volatile
@@ -20,7 +22,8 @@ abstract class AppDatabase : RoomDatabase() {
                     context.applicationContext,
                     AppDatabase::class.java,
                     "alimentos_database" // Nombre del archivo de la BD
-                ).build()
+                ).fallbackToDestructiveMigration()
+                    .build()
                 INSTANCE = instance
                 instance
             }

@@ -1,134 +1,156 @@
+// HomeActivity.kt
 package com.example.foodtracker
 
-import DailyCheckWorker
 import android.app.Activity
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
-import android.widget.Button
+import android.widget.ImageView
 import android.widget.ListView
 import android.widget.Toast
-import androidx.annotation.OptIn
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
-import androidx.media3.common.util.Log
-import androidx.media3.common.util.UnstableApi
 import androidx.work.Constraints
 import androidx.work.ExistingPeriodicWorkPolicy
-import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import com.example.foodtracker.modelos.Alimento
-import com.example.foodtracker.modelos.AlimentosAdapter
 import com.example.foodtracker.modelos.AlimentoDao
+import com.example.foodtracker.modelos.AlimentosAdapter
 import com.example.foodtracker.modelos.AppDatabase
 import kotlinx.coroutines.launch
 import java.util.concurrent.TimeUnit
 
 class HomeActivity : AppCompatActivity() {
+
     companion object {
         const val EDITAR_ALIMENTO_REQUEST = 1
     }
+
     private lateinit var listView: ListView
     private lateinit var alimentoDao: AlimentoDao
     private lateinit var alimentosAdapter: AlimentosAdapter
+    private var todosLosAlimentos: List<Alimento> = listOf()
+
+    private fun programarNotificacionesDiarias() {
+        val constraints = Constraints.Builder()
+            .setRequiresBatteryNotLow(true)
+            .build()
+
+        val dailyRequest = PeriodicWorkRequestBuilder<DailyCheckWorker>(
+            1, TimeUnit.DAYS
+        )
+            .setInitialDelay(10, TimeUnit.SECONDS)
+            .setConstraints(constraints)
+            .build()
+
+        WorkManager.getInstance(this).enqueueUniquePeriodicWork(
+            "daily_food_check",
+            ExistingPeriodicWorkPolicy.KEEP,
+            dailyRequest
+        )
+    }
+
+    private fun scheduleDailyWorker() {
+        val workRequest = PeriodicWorkRequestBuilder<DailyCheckWorker>(1, TimeUnit.DAYS)
+            .setInitialDelay(1, TimeUnit.MINUTES)
+            .build()
+
+        WorkManager.getInstance(this).enqueueUniquePeriodicWork(
+            "daily_check",
+            ExistingPeriodicWorkPolicy.KEEP,
+            workRequest
+        )
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_home)
-        val sharedPreferences = getSharedPreferences("FoodTrackerPrefs", MODE_PRIVATE)
-        sharedPreferences.edit().remove("listaAlimentos").apply()
-        // Inicializar vistas
-        listView = findViewById(R.id.listViewAlimentos)
-        val btnAgregarAlimento = findViewById<Button>(R.id.btnAgregarAlimento)
-        val btnTest = findViewById<Button>(R.id.btnTest)
-        val btnVerEstadisticas = findViewById<Button>(R.id.btnVerEstadisticas)
 
-        // Inicializar Room
-        val db = AppDatabase.getDatabase(this)
-        alimentoDao = db.alimentoDao()
-
-        // Configurar adaptador
-        alimentosAdapter = AlimentosAdapter(this, mutableListOf())
-        listView.adapter = alimentosAdapter
-
-        // Observar cambios en la base de datos
-        observarAlimentos()
-
-        // Solicitar permisos de notificación (si es necesario)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             requestPermissions(arrayOf(android.Manifest.permission.POST_NOTIFICATIONS), 100)
         }
 
-        // Configurar listeners
-        btnAgregarAlimento.setOnClickListener {
+        listView = findViewById(R.id.listViewAlimentos)
+
+        val db = AppDatabase.getDatabase(this)
+        alimentoDao = db.alimentoDao()
+
+        alimentosAdapter = AlimentosAdapter(this, mutableListOf())
+        listView.adapter = alimentosAdapter
+
+        observarAlimentos()
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            requestPermissions(arrayOf(android.Manifest.permission.POST_NOTIFICATIONS), 100)
+        }
+
+        findViewById<ImageView>(R.id.imgCarnes).setOnClickListener {
+            filtrarPorCategoria("Carnes")
+        }
+
+        findViewById<ImageView>(R.id.imgLacteos).setOnClickListener {
+            filtrarPorCategoria("Lácteos")
+        }
+
+        findViewById<ImageView>(R.id.imgFrutas).setOnClickListener {
+            filtrarPorCategoria("Frutas")
+        }
+
+        findViewById<ImageView>(R.id.imgVerduras).setOnClickListener {
+            filtrarPorCategoria("Verduras")
+        }
+
+        findViewById<ImageView>(R.id.imgOtros).setOnClickListener {
+            filtrarPorCategoria("Otros")
+        }
+
+        findViewById<ImageView>(R.id.navHome).setOnClickListener {
+            alimentosAdapter.updateList(todosLosAlimentos)
+            listView.smoothScrollToPosition(0)
+        }
+
+        findViewById<ImageView>(R.id.navAgregar).setOnClickListener {
             startActivity(Intent(this, MainActivity::class.java))
         }
 
-        findViewById<Button>(R.id.btnTest).setOnClickListener {
-            val testRequest = OneTimeWorkRequestBuilder<DailyCheckWorker>()
-                .setInitialDelay(1, TimeUnit.SECONDS) // Para pruebas inmediatas
-                .build()
-
-            WorkManager.getInstance(this).enqueue(testRequest)
-            Toast.makeText(this, "Verificando alimentos...", Toast.LENGTH_SHORT).show()
-        }
-
-        btnVerEstadisticas.setOnClickListener {
+        findViewById<ImageView>(R.id.navEstadisticas).setOnClickListener {
             startActivity(Intent(this, EstadisticasActivity::class.java))
         }
 
-        // Programar chequeo diario
-        scheduleDailyCheck()
+        findViewById<ImageView>(R.id.navNotificaciones).setOnClickListener {
+            startActivity(Intent(this, NovedadesActivity::class.java))
+        }
+
+        programarNotificacionesDiarias()
+        scheduleDailyWorker()
     }
 
     private fun observarAlimentos() {
         lifecycleScope.launch {
             alimentoDao.getAllAlimentos().collect { alimentos ->
+                todosLosAlimentos = alimentos
                 alimentosAdapter.updateList(alimentos)
 
-                // Configurar clics en los items
                 listView.setOnItemClickListener { _, _, position, _ ->
-                    val alimento = alimentos[position]
-                    val intent = Intent(this@HomeActivity, EditarAlimentoActivity::class.java).apply {
-                        putExtra("alimento_id", alimento.id) // Envía solo el ID
-                    }
+                    val alimento = alimentosAdapter.getItem(position) as Alimento
+                    val intent = Intent(this@HomeActivity, EditarAlimentoActivity::class.java)
+                    intent.putExtra("alimento_id", alimento.id)
                     startActivityForResult(intent, EDITAR_ALIMENTO_REQUEST)
                 }
             }
         }
     }
 
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-
-        if (resultCode == Activity.RESULT_OK && data != null) {
-            // Manejar resultados de edición/eliminación si es necesario
-        }
+    private fun filtrarPorCategoria(categoria: String) {
+        val filtrados = todosLosAlimentos.filter { it.categoria == categoria }
+        alimentosAdapter.updateList(filtrados)
     }
 
-    @OptIn(UnstableApi::class)
-    private fun scheduleDailyCheck() {
-        val workManager = WorkManager.getInstance(this)
-
-        // Configuración mejorada del trabajo periódico
-        val constraints = Constraints.Builder()
-            .setRequiresBatteryNotLow(true)
-            .build()
-
-        val dailyCheckRequest = PeriodicWorkRequestBuilder<DailyCheckWorker>(
-            24, // Cada 24 horas
-            TimeUnit.HOURS
-        )
-            .setConstraints(constraints)
-            .setInitialDelay(1, TimeUnit.MINUTES)
-            .build()
-
-        // Política para evitar duplicados
-        workManager.enqueueUniquePeriodicWork(
-            "daily_food_check",
-            ExistingPeriodicWorkPolicy.UPDATE, // Actualiza si ya existe
-            dailyCheckRequest
-        )
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (resultCode == Activity.RESULT_OK && data != null) {
+            // Opcional: recargar lista si hubo cambios
+        }
     }
 }

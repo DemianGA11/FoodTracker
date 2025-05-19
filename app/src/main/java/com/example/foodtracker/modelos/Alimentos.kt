@@ -3,6 +3,7 @@ package com.example.foodtracker.modelos
 // Alimento.kt
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import java.time.LocalDate
 
 @Entity(tableName = "alimentos") // Define el nombre de la tabla
 data class Alimento(
@@ -12,6 +13,5 @@ data class Alimento(
     val categoria: String,
     val cantidad: Double,
     val unidad: String,
-    val notificado: Boolean = false // Útil para evitar notificaciones duplicadas
-
+    val notificado: Boolean = false, // Útil para evitar notificaciones duplicadas
 )

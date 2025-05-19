@@ -1,18 +1,20 @@
-import android.annotation.SuppressLint
+package com.example.foodtracker
+
 import android.content.Context
 import android.os.Build
 import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
-import com.example.foodtracker.modelos.Alimento
 import com.example.foodtracker.modelos.AppDatabase
+import com.example.foodtracker.modelos.Alimento
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
 
 class DailyCheckWorker(context: Context, params: WorkerParameters) : CoroutineWorker(context, params) {
     private val notificationHelper = NotificationHelper(context)
+
     @RequiresApi(Build.VERSION_CODES.O)
     private val dateFormatter = DateTimeFormatter.ISO_DATE
 
@@ -28,19 +30,25 @@ class DailyCheckWorker(context: Context, params: WorkerParameters) : CoroutineWo
         }
     }
 
-    @SuppressLint("NewApi")
+    @RequiresApi(Build.VERSION_CODES.O)
     private suspend fun checkExpiringFoods() {
         val db = AppDatabase.getDatabase(applicationContext)
-        val hoy = LocalDate.now().toString()
-        val limite = LocalDate.now().plusDays(7).toString()
+        val hoy = LocalDate.now()
+        val limite = hoy.plusDays(7)
 
-        val alimentosProximos = db.alimentoDao().getAlimentosProximosACaducar(hoy, limite)
+        val alimentosProximos = db.alimentoDao().getAllForStats().filter {
+            try {
+                val fecha = LocalDate.parse(it.fechaCaducidad, dateFormatter)
+                val diasRestantes = ChronoUnit.DAYS.between(hoy, fecha)
+                diasRestantes in 0..7 && !it.notificado // ← evita duplicados
+            } catch (e: Exception) {
+                false
+            }
+        }
 
         alimentosProximos.forEach { alimento ->
-            if (!alimento.notificado) {
-                notifyFood(alimento)
-                db.alimentoDao().update(alimento.copy(notificado = true))
-            }
+            notifyFood(alimento)
+            db.alimentoDao().update(alimento.copy(notificado = true)) // ← actualiza como notificado
         }
     }
 
@@ -50,24 +58,15 @@ class DailyCheckWorker(context: Context, params: WorkerParameters) : CoroutineWo
             val fechaCaducidad = LocalDate.parse(alimento.fechaCaducidad, dateFormatter)
             val diasRestantes = ChronoUnit.DAYS.between(LocalDate.now(), fechaCaducidad)
 
-            when {
-                diasRestantes <= 0 -> notificationHelper.showNotification(
-                    "¡Alimento caducado!",
-                    "${alimento.nombre} ha caducado"
-                )
-                diasRestantes <= 1 -> notificationHelper.showNotification(
-                    "¡Alerta urgente!",
-                    "${alimento.nombre} caduca mañana"
-                )
-                diasRestantes <= 3 -> notificationHelper.showNotification(
-                    "¡Atención!",
-                    "${alimento.nombre} caduca en $diasRestantes días"
-                )
-                diasRestantes <= 7 -> notificationHelper.showNotification(
-                    "Recordatorio",
-                    "${alimento.nombre} caduca pronto (en $diasRestantes días)"
-                )
+            val (title, message) = when {
+                diasRestantes <= 0 -> "¡Alimento caducado!" to "${alimento.nombre} ha caducado"
+                diasRestantes == 1L -> "¡Alerta urgente!" to "${alimento.nombre} caduca mañana"
+                diasRestantes <= 3 -> "¡Atención!" to "${alimento.nombre} caduca en $diasRestantes días"
+                else -> "Recordatorio" to "${alimento.nombre} caduca pronto (en $diasRestantes días)"
             }
+
+            notificationHelper.showNotification(title, message)
+
         } catch (e: Exception) {
             Log.e("DailyCheckWorker", "Error al procesar ${alimento.nombre}", e)
         }

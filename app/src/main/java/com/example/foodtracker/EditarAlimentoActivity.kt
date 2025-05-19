@@ -1,154 +1,150 @@
 package com.example.foodtracker
 
-import android.app.Activity
-import android.content.Intent
+import android.app.DatePickerDialog
 import android.os.Bundle
+import android.view.View
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import com.example.foodtracker.modelos.Alimento
-import com.example.foodtracker.modelos.AlimentoDao
 import com.example.foodtracker.modelos.AppDatabase
 import kotlinx.coroutines.launch
+import java.util.*
+import java.util.Locale
 
 class EditarAlimentoActivity : AppCompatActivity() {
 
-    private lateinit var alimentoDao: AlimentoDao
-    private lateinit var alimentoActual: Alimento
+    private var alimento: Alimento? = null
 
-    // Views
-    private lateinit var edtNombre: EditText
-    private lateinit var edtCantidad: EditText
-    private lateinit var spnUnidad: Spinner
-    private lateinit var spnCategoria: Spinner
-    private lateinit var txtFecha: TextView
+    private lateinit var campoNombre: EditText
+    private lateinit var campoCantidad: EditText
+    private lateinit var spinnerUnidad: Spinner
+    private lateinit var spinnerCategoria: Spinner
+    private lateinit var campoFecha: EditText
     private lateinit var btnGuardar: Button
     private lateinit var btnEliminar: Button
+    private lateinit var btnAumentar: Button
+    private lateinit var btnDisminuir: Button
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_editar_alimento)
 
-        // Inicializar Room
-        val db = AppDatabase.getDatabase(this)
-        alimentoDao = db.alimentoDao()
+        campoNombre = findViewById(R.id.campoNombre)
+        campoCantidad = findViewById(R.id.campoCantidad)
+        spinnerUnidad = findViewById(R.id.spinnerUnidad)
+        spinnerCategoria = findViewById(R.id.spinnerCategoria)
+        campoFecha = findViewById(R.id.campoFecha)
+        btnGuardar = findViewById(R.id.btnGuardar)
+        btnEliminar = findViewById(R.id.btnEliminar)
+        btnAumentar = findViewById(R.id.btnAumentar)
+        btnDisminuir = findViewById(R.id.btnDisminuir)
 
-        // Inicializar vistas
-        initViews()
+        btnGuardar.setBackgroundColor(ContextCompat.getColor(this, android.R.color.holo_green_dark))
+        btnEliminar.setBackgroundColor(ContextCompat.getColor(this, android.R.color.holo_red_dark))
 
-        // Obtener ID del alimento
+        val categorias = listOf("Lácteos", "Carnes", "Frutas", "Verduras", "Otros")
+        val unidades = listOf("Paquete", "Gramos", "Mililitros", "Litros", "Piezas")
+
+        spinnerCategoria.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, categorias)
+        spinnerUnidad.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, unidades)
+
         val alimentoId = intent.getIntExtra("alimento_id", -1)
-
         if (alimentoId == -1) {
-            Toast.makeText(this, "Error: Alimento no encontrado", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "Error: ID inválido", Toast.LENGTH_SHORT).show()
             finish()
             return
         }
 
-        // Cargar datos del alimento
         lifecycleScope.launch {
-            alimentoDao.getAlimentoById(alimentoId)?.let { alimento ->
-                alimentoActual = alimento
-                mostrarDatosAlimento(alimento)
-            } ?: run {
+            val dao = AppDatabase.getDatabase(this@EditarAlimentoActivity).alimentoDao()
+            alimento = dao.getAlimentoById(alimentoId)
+
+            if (alimento == null) {
                 Toast.makeText(this@EditarAlimentoActivity, "Alimento no encontrado", Toast.LENGTH_SHORT).show()
+                finish()
+                return@launch
+            }
+
+            campoNombre.setText(alimento!!.nombre)
+            campoCantidad.setText(alimento!!.cantidad.toString())
+            campoFecha.setText(alimento!!.fechaCaducidad)
+            spinnerCategoria.setSelection(categorias.indexOf(alimento!!.categoria))
+            spinnerUnidad.setSelection(unidades.indexOf(alimento!!.unidad))
+        }
+
+        btnAumentar.setOnClickListener {
+            val cantidad = campoCantidad.text.toString().toDoubleOrNull() ?: 0.0
+            campoCantidad.setText((cantidad + 1).toString())
+        }
+
+        btnDisminuir.setOnClickListener {
+            val cantidad = campoCantidad.text.toString().toDoubleOrNull() ?: 0.0
+            val nuevaCantidad = cantidad - 1
+            if (nuevaCantidad >= 0) campoCantidad.setText(nuevaCantidad.toString())
+        }
+
+        campoFecha.setOnClickListener {
+            val calendario = Calendar.getInstance()
+            val anio = calendario.get(Calendar.YEAR)
+            val mes = calendario.get(Calendar.MONTH)
+            val dia = calendario.get(Calendar.DAY_OF_MONTH)
+
+            val datePicker = DatePickerDialog(this, { _, year, month, dayOfMonth ->
+                val mesFormateado = String.format("%02d", month + 1)
+                val diaFormateado = String.format("%02d", dayOfMonth)
+                campoFecha.setText("$year-$mesFormateado-$diaFormateado")
+            }, anio, mes, dia)
+
+            datePicker.show()
+        }
+
+        btnGuardar.setOnClickListener {
+            val nombre = campoNombre.text.toString()
+            val cantidad = campoCantidad.text.toString().toDoubleOrNull()
+            val unidad = spinnerUnidad.selectedItem.toString()
+            val categoria = spinnerCategoria.selectedItem.toString()
+            val fecha = campoFecha.text.toString()
+
+            if (nombre.isEmpty() || cantidad == null || cantidad < 0 || fecha.isEmpty()) {
+                Toast.makeText(this, "Campos inválidos o cantidad negativa", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+
+            lifecycleScope.launch {
+                val dao = AppDatabase.getDatabase(this@EditarAlimentoActivity).alimentoDao()
+                if (cantidad == 0.0) {
+                    alimento?.let { dao.delete(it) }
+                    Toast.makeText(this@EditarAlimentoActivity, "Alimento eliminado por cantidad cero", Toast.LENGTH_SHORT).show()
+                } else {
+                    val actualizado = alimento?.copy(
+                        nombre = nombre.replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() },
+                        cantidad = cantidad,
+                        unidad = unidad,
+                        categoria = categoria,
+                        fechaCaducidad = fecha
+                    )
+                    actualizado?.let { dao.update(it) }
+                    Toast.makeText(this@EditarAlimentoActivity, "Alimento actualizado", Toast.LENGTH_SHORT).show()
+                }
                 finish()
             }
         }
-    }
 
-    private fun initViews() {
-        edtNombre = findViewById(R.id.edtNombre)
-        edtCantidad = findViewById(R.id.edtCantidad)
-        spnUnidad = findViewById(R.id.spnUnidad)
-        spnCategoria = findViewById(R.id.spnCategoria)
-        txtFecha = findViewById(R.id.txtFechaCaducidad)
-        btnGuardar = findViewById(R.id.btnGuardar)
-        btnEliminar = findViewById(R.id.btnEliminar)
+        btnEliminar.setOnClickListener {
+            val actual = alimento
+            if (actual == null) {
+                Toast.makeText(this, "Error: alimento no disponible", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
 
-        // Configurar Spinners
-        configurarSpinnerUnidad()
-        configurarSpinnerCategoria()
-
-        // Configurar botones
-        btnGuardar.setOnClickListener { guardarCambios() }
-        btnEliminar.setOnClickListener { eliminarAlimento() }
-        findViewById<Button>(R.id.btnSumar).setOnClickListener { modificarCantidad(1) }
-        findViewById<Button>(R.id.btnRestar).setOnClickListener { modificarCantidad(-1) }
-    }
-
-    private fun mostrarDatosAlimento(alimento: Alimento) {
-        edtNombre.setText(alimento.nombre)
-        edtCantidad.setText(alimento.cantidad.toString())
-        txtFecha.text = "Vence: ${alimento.fechaCaducidad}"
-
-        // Seleccionar unidad y categoría en los spinners
-        (spnUnidad.adapter as? ArrayAdapter<String>)?.let { adapter ->
-            val posUnidad = adapter.getPosition(alimento.unidad)
-            if (posUnidad >= 0) spnUnidad.setSelection(posUnidad)
-        }
-
-        (spnCategoria.adapter as? ArrayAdapter<String>)?.let { adapter ->
-            val posCategoria = adapter.getPosition(alimento.categoria)
-            if (posCategoria >= 0) spnCategoria.setSelection(posCategoria)
-        }
-    }
-
-    private fun configurarSpinnerUnidad() {
-        val unidades = arrayOf("Paquete", "Gramos", "Mililitros", "Litros", "Piezas")
-        val adapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, unidades)
-        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-        spnUnidad.adapter = adapter
-    }
-
-    private fun configurarSpinnerCategoria() {
-        val categorias = listOf("Lácteos", "Carnes", "Frutas", "Verduras", "Otros")
-        val adapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, categorias)
-        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-        spnCategoria.adapter = adapter
-    }
-
-    private fun modificarCantidad(incremento: Int) {
-        val cantidadActual = edtCantidad.text.toString().toDoubleOrNull() ?: 0.0
-        val nuevaCantidad = cantidadActual + incremento
-
-        if (nuevaCantidad >= 0) {
-            edtCantidad.setText(nuevaCantidad.toString())
-        } else {
-            Toast.makeText(this, "La cantidad no puede ser menor a 0", Toast.LENGTH_SHORT).show()
-        }
-    }
-
-    private fun guardarCambios() {
-        val nombre = edtNombre.text.toString()
-        val cantidad = edtCantidad.text.toString().toDoubleOrNull() ?: 0.0
-        val unidad = spnUnidad.selectedItem.toString()
-        val categoria = spnCategoria.selectedItem.toString()
-
-        if (nombre.isBlank()) {
-            Toast.makeText(this, "Ingrese un nombre válido", Toast.LENGTH_SHORT).show()
-            return
-        }
-
-        lifecycleScope.launch {
-            val alimentoActualizado = alimentoActual.copy(
-                nombre = nombre,
-                cantidad = cantidad,
-                unidad = unidad,
-                categoria = categoria
-            )
-
-            alimentoDao.update(alimentoActualizado)
-            setResult(Activity.RESULT_OK)
-            finish()
-        }
-    }
-
-    private fun eliminarAlimento() {
-        lifecycleScope.launch {
-            alimentoDao.delete(alimentoActual)
-            setResult(Activity.RESULT_OK)
-            finish()
+            lifecycleScope.launch {
+                val db = AppDatabase.getDatabase(this@EditarAlimentoActivity)
+                db.alimentoDao().delete(actual)
+                Toast.makeText(this@EditarAlimentoActivity, "Alimento eliminado", Toast.LENGTH_SHORT).show()
+                finish()
+            }
         }
     }
 }
